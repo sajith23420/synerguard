@@ -355,6 +355,15 @@ body {
   :root { --max-width: 1240px; }
 }
 
+/* The right rail lands at 1360, not 1280. At 1280 a third column leaves the
+   main column at 552px, which squeezes the expanded interaction card — its
+   Mechanism / Clinical effect grid is two columns. 1280px laptops are common
+   and are better served by a clean two-column layout than a cramped three, so
+   the third zone waits until it can pay for itself. */
+@media (min-width: 1360px) {
+  :root { --max-width: 1320px; }
+}
+
 @media (min-width: 1440px) {
   :root {
     --max-width: 1400px;
@@ -415,6 +424,28 @@ body {
   /* The results now start level with the top of the rail, so the gap that
      separated them from the search panel in the single column is unwanted. */
   .results-section { margin-top: 0; }
+}
+
+/* Display controls under the search panel. Below 1024 the rail is ordinary
+   flow, so these simply stack under the panel — which reads correctly there
+   too. */
+.rail-controls {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.rail-control {
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* .prediction-toggle carries its own card chrome and a bottom margin sized for
+   the results flow it used to sit in. In the rail the grid gap spaces it. */
+.rail-controls .prediction-toggle {
+  margin-bottom: 0;
 }
 
 /* ==========================================================================
@@ -700,14 +731,26 @@ p { color: var(--color-text-secondary); }
 
 /* The drug-entry console */
 .panel {
-  /* The 3px brand bar is a background layer, not a ::before pinned inside
-     `overflow: hidden`. That clipping context also clipped the autocomplete
-     dropdown, which is absolutely positioned inside this panel and is taller
-     (300px) than the room left below the input — so the bottom of the
-     suggestion list, including the "Add anyway" button, was unreachable. A
-     background layer is clipped by border-radius natively, so the corners are
-     unchanged and the panel no longer clips its own children. The 0.85 opacity
-     the pseudo-element carried is folded into the gradient stops. */
+  /* The 3px brand bar is a background layer rather than a ::before element.
+     It used to be a ::before, which meant this panel needed `overflow: hidden`
+     to clip the bar to its rounded corners.
+
+     That clipping context also clipped .autocomplete-dropdown, which is
+     absolutely positioned inside this panel, is 300px tall, and has only about
+     200px of room below the input. Measured: the dropdown overhung the panel by
+     98px, and elementFromPoint 20px below the panel's edge returned .shell
+     rather than the suggestion laid out at that point — roughly two
+     suggestions were rendered but invisible and unclickable, including the
+     "Add anyway" affordance when it was present.
+
+     This was a LATENT defect, not one the grid introduced: the same 98px
+     overhang is present in the original single-column layout. Narrowing the
+     panel into a 320px rail is what made it worth chasing down.
+
+     A background layer is clipped by border-radius natively, so no clipping
+     context is needed and the panel no longer clips its own children. Verified
+     pixel-identical at the corner at 4x zoom. The 0.85 opacity the
+     pseudo-element carried is folded into the gradient stops. */
   background-color: var(--color-card);
   background-image: linear-gradient(
     90deg,
@@ -1325,6 +1368,13 @@ p { color: var(--color-text-secondary); }
 }
 
 .prediction-toggle-warning strong { color: var(--color-predicted); }
+
+/* The warning now stands on its own above the interaction list rather than
+   hanging off the switch, so it carries its own spacing. */
+.prediction-warning-standalone {
+  margin-top: 0;
+  margin-bottom: var(--space-5);
+}
 
 .summary-stat-predicted {
   border-color: var(--color-predicted-border);
@@ -1946,6 +1996,9 @@ p { color: var(--color-text-secondary); }
   to { transform: rotate(360deg); }
 }
 
+/* Was an inline style on the element, which no stylesheet rule could reach. */
+.welcome-state { margin-top: var(--space-6); }
+
 .empty-state {
   text-align: center;
   padding: var(--space-12) var(--space-6);
@@ -2056,6 +2109,10 @@ p { color: var(--color-text-secondary); }
     font-size: 10.5pt;
   }
 
+  /* The rail's controls are all inputs — nothing to act on once printed. The
+     prediction WARNING is not in here: it renders in the main column and must
+     survive onto paper, which is why the component is split in two. */
+  .rail-controls,
   .header,
   .theme-toggle,
   .mode-toggle,

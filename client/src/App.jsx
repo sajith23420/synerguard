@@ -270,9 +270,10 @@ function App() {
             </div>
           </div>
 
-          {/* Left rail. Still labelled by the page title above it — an
-              aria-labelledby IDREF may point anywhere in the document. */}
-          <section className="rail rail-left" aria-labelledby="search-heading">
+          {/* Left rail. Named in its own right rather than by the page
+              heading above it: a landmark whose name lives outside it is
+              confusing to walk. The h2 labels the page. */}
+          <section className="rail rail-left" aria-label="Regimen">
             <div className="panel">
               <SearchBox onSelect={handleAddDrug} selectedDrugs={selectedDrugs} />
 
@@ -313,6 +314,25 @@ function App() {
                 </div>
               </div>
             )}
+
+            {/* Display controls. Only meaningful once there is a result to
+                apply them to, so they appear with it — same condition as
+                before the move. The prediction WARNING is not here: it renders
+                in the main column above the cards it qualifies. */}
+            {results && (
+              <div className="rail-controls">
+                <div className="rail-control">
+                  <ModeToggle plainMode={plainMode} onChange={setPlainMode} />
+                </div>
+
+                <PredictionToggle
+                  variant="switch"
+                  showPredicted={showPredicted}
+                  onChange={setShowPredicted}
+                  available={results.predictedTotal ?? 0}
+                />
+              </div>
+            )}
           </section>
 
           <div className="col-main">
@@ -332,7 +352,6 @@ function App() {
                     )}
                   </div>
                 </div>
-                <ModeToggle plainMode={plainMode} onChange={setPlainMode} />
               </div>
 
               <UnknownDrugsNotice
@@ -342,12 +361,6 @@ function App() {
               />
 
               <SubstitutionNotice substitutions={results.substitutions ?? []} />
-
-              <PredictionToggle
-                showPredicted={showPredicted}
-                onChange={setShowPredicted}
-                available={results.predictedTotal ?? 0}
-              />
 
               <ResultsSummary
                 counts={severityCounts}
@@ -369,6 +382,15 @@ function App() {
                   total={interactions.length}
                 />
               )}
+
+              {/* Immediately above the cards, so it qualifies what is being
+                  read. Survives print; the switch in the rail does not. */}
+              <PredictionToggle
+                variant="warning"
+                showPredicted={showPredicted}
+                onChange={setShowPredicted}
+                available={results.predictedTotal ?? 0}
+              />
 
               {interactions.length === 0 ? (
                 <div className="empty-state card">
@@ -429,9 +451,8 @@ function App() {
 
           {!results && selectedDrugs.length === 0 && (
             <section
-              className="empty-state card"
+              className="empty-state card welcome-state"
               aria-labelledby="welcome-heading"
-              style={{ marginTop: 'var(--space-6)' }}
             >
               <div className="empty-state-icon" aria-hidden="true">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
