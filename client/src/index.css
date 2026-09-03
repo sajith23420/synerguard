@@ -52,6 +52,17 @@
   /* --- Layout --- */
   --max-width: 1120px;
   --content-width: 880px;
+
+  /* Height of the sticky .header in its row layout (>= 860px): 16px padding
+     top and bottom, ~42px of brand/stat content, 1px border. Consumed only by
+     the sticky left rail, which itself only exists from 1024px up — by which
+     point the header is always in row layout. The rail adds a gap on top of
+     this offset, so a pixel or two of drift shows as a slightly larger gap
+     rather than as content sliding under the header. */
+  --header-h: 76px;
+
+  /* Gap between shell columns. Widens at 1440 where there is room for it. */
+  --shell-gap: var(--space-6);
 }
 
 /* --------------------------------------------------------------------------
@@ -324,6 +335,46 @@ body {
 
 .stack > * + * {
   margin-top: var(--space-6);
+}
+
+/* --------------------------------------------------------------------------
+   Layout tiers
+
+   The single column keeps the 1120/880 pair. Once the shell splits into
+   columns the outer cap has to grow, or the reading column pays for the rails:
+
+     1280px  1240 - 320 (rail) - 280 (rail) - 2x24 (gap) = 577..592px main
+     1440px  1400 - 320        - 280        - 2x32       = 736px main
+
+   Both leave the card text inside the 45-75ch band. Below 1280 there is no
+   right rail, so the main column keeps 625-776px.
+   -------------------------------------------------------------------------- */
+@media (min-width: 1280px) {
+  :root { --max-width: 1240px; }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --max-width: 1400px;
+    --shell-gap: var(--space-8);
+  }
+}
+
+/* ==========================================================================
+   Shell — the layout grid
+
+   Inert at this stage: plain blocks in document order, laying out exactly as
+   the single column did. The grid is switched on per breakpoint further down.
+   `min-width: 0` is a no-op in block flow and pre-empts the min-content floor
+   these boxes would otherwise inherit as grid items.
+   ========================================================================== */
+
+.shell { display: block; }
+
+.shell-head,
+.col-main,
+.rail {
+  min-width: 0;
 }
 
 /* ==========================================================================

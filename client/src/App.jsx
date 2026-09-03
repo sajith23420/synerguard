@@ -243,6 +243,7 @@ function App() {
 
       <main id="main-content" className="main" role="main">
         <div className="content">
+         <div className="shell">
           {/* Only rendered on paper — heads the printed report */}
           <div className="print-header">
             <h1>SynerGuard — Interaction Report</h1>
@@ -253,7 +254,9 @@ function App() {
             </div>
           </div>
 
-          <section aria-labelledby="search-heading">
+          {/* Spans every column of the shell: the page title heads the whole
+              layout, not the search rail it used to sit inside. */}
+          <div className="shell-head">
             <div className="page-header">
               <span className="eyebrow">Clinical decision support</span>
               <h2 id="search-heading" className="page-title">
@@ -265,7 +268,11 @@ function App() {
                 evidence exists.
               </p>
             </div>
+          </div>
 
+          {/* Left rail. Still labelled by the page title above it — an
+              aria-labelledby IDREF may point anywhere in the document. */}
+          <section className="rail rail-left" aria-labelledby="search-heading">
             <div className="panel">
               <SearchBox onSelect={handleAddDrug} selectedDrugs={selectedDrugs} />
 
@@ -307,6 +314,8 @@ function App() {
               </div>
             )}
           </section>
+
+          <div className="col-main">
 
           {results && (
             <section className="results-section" aria-labelledby="results-heading">
@@ -453,6 +462,9 @@ function App() {
           {/* Outside the results block on purpose: the limits of this tool apply
               before anyone runs a check, not only once they have an answer. */}
           <Disclaimer />
+
+          </div>{/* /col-main */}
+         </div>{/* /shell */}
         </div>
       </main>
     </div>
