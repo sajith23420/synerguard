@@ -63,6 +63,8 @@
 
   /* Gap between shell columns. Widens at 1440 where there is room for it. */
   --shell-gap: var(--space-6);
+
+  --rail-left-w: 320px;
 }
 
 /* --------------------------------------------------------------------------
@@ -377,6 +379,44 @@ body {
   min-width: 0;
 }
 
+/* Two columns from 1024px: a sticky left rail and a main column that scrolls
+   with the document. The document stays the one and only scroller — the main
+   column is NOT given its own overflow, because a scroll container here would
+   break window.print(), in-page anchors and Ctrl+F. */
+@media (min-width: 1024px) {
+  /* The shell takes the width cap over from .content; .main still bounds it. */
+  .content { max-width: none; }
+
+  .shell {
+    display: grid;
+    grid-template-columns: var(--rail-left-w) minmax(0, 1fr);
+    grid-template-areas:
+      'head head'
+      'rail main';
+    column-gap: var(--shell-gap);
+    /* Required for sticky. A grid item stretches to its row's height by
+       default, leaving a sticky box no room to move inside its containing
+       block, so it silently never sticks. */
+    align-items: start;
+  }
+
+  .shell-head { grid-area: head; }
+  .rail-left { grid-area: rail; }
+  .col-main { grid-area: main; }
+
+  .rail-left {
+    position: sticky;
+    top: calc(var(--header-h) + var(--shell-gap));
+    /* Below the header (100) and above .col-main, so the autocomplete dropdown
+       (50, inside this stacking context) lands over the results. */
+    z-index: 20;
+  }
+
+  /* The results now start level with the top of the rail, so the gap that
+     separated them from the search panel in the single column is unwanted. */
+  .results-section { margin-top: 0; }
+}
+
 /* ==========================================================================
    Header
    ========================================================================== */
@@ -660,22 +700,29 @@ p { color: var(--color-text-secondary); }
 
 /* The drug-entry console */
 .panel {
-  background: var(--color-card);
+  /* The 3px brand bar is a background layer, not a ::before pinned inside
+     `overflow: hidden`. That clipping context also clipped the autocomplete
+     dropdown, which is absolutely positioned inside this panel and is taller
+     (300px) than the room left below the input — so the bottom of the
+     suggestion list, including the "Add anyway" button, was unreachable. A
+     background layer is clipped by border-radius natively, so the corners are
+     unchanged and the panel no longer clips its own children. The 0.85 opacity
+     the pseudo-element carried is folded into the gradient stops. */
+  background-color: var(--color-card);
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-teal) 85%, transparent) 0%,
+    color-mix(in srgb, var(--brand-teal-bright) 85%, transparent) 50%,
+    color-mix(in srgb, var(--color-teal) 85%, transparent) 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 3px;
+  background-position: top left;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   padding: var(--space-6);
   position: relative;
-  overflow: hidden;
-}
-
-.panel::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-teal) 0%, var(--brand-teal-bright) 50%, var(--color-teal) 100%);
-  opacity: 0.85;
 }
 
 @media (min-width: 640px) {
@@ -2023,11 +2070,29 @@ p { color: var(--color-text-secondary); }
     display: none !important;
   }
 
+  /* Flatten the shell back to one column. Every wrapper the screen layout
+     introduces must be listed here: the print block resets by explicit class
+     name, so a wrapper it has never heard of keeps whatever display it was
+     given and the report comes out in columns. Single class selectors only
+     (0,1,0) — a descendant selector added later would out-specify this and
+     the grid would survive onto paper. */
   .main,
-  .content {
+  .content,
+  .shell,
+  .shell-head,
+  .col-main,
+  .rail {
+    display: block !important;
     max-width: none;
+    width: auto;
     padding: 0;
     margin: 0;
+  }
+
+  /* Sticky is meaningless on paper and pins the rail to the first page. */
+  .rail {
+    position: static !important;
+    top: auto !important;
   }
 
   .print-header {
@@ -2060,7 +2125,7 @@ p { color: var(--color-text-secondary); }
     margin-bottom: 6mm;
   }
 
-  .panel::before { display: none; }
+  .panel { background-image: none; }
 
   .selected-drugs-list { gap: 2mm; }
 
