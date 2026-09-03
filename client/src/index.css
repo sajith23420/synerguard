@@ -749,9 +749,23 @@ p { color: var(--color-text-secondary); }
 
 .autocomplete-item.highlighted .autocomplete-item-name { color: var(--color-teal); }
 
+.autocomplete-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .autocomplete-item-name {
   font-weight: 500;
   color: var(--color-text-primary);
+}
+
+/* Says which synonym the query actually matched, so a redirected search is
+   never silent about having changed the drug being screened. */
+.autocomplete-item-alias {
+  font-size: var(--text-xs);
+  color: var(--color-teal);
+  margin-top: 1px;
 }
 
 .autocomplete-item-hint {
@@ -1068,6 +1082,74 @@ p { color: var(--color-text-secondary); }
 .badge-curated::before { display: none; }
 
 /* ==========================================================================
+   Synonym substitutions
+   Informational, not a warning: the redirect is correct and wanted. It is shown
+   in the accent colour rather than the alert red used for unscreened drugs.
+   ========================================================================== */
+
+.substitution-notice {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+  background: var(--color-teal-soft);
+  border: 1px solid var(--color-teal);
+  border-radius: var(--radius-md);
+}
+
+.substitution-notice-icon {
+  color: var(--color-teal);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.substitution-notice-body {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.substitution-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.substitution-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.substitution-from {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.substitution-arrow {
+  color: var(--color-teal);
+  font-weight: 700;
+}
+
+.substitution-to {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.substitution-notice-foot {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ==========================================================================
    Predicted tier — ML estimates
    ========================================================================== */
 
@@ -1253,8 +1335,11 @@ p { color: var(--color-text-secondary); }
   margin-bottom: var(--space-5);
 }
 
+/* auto-fit rather than a fixed 4, because a fifth "of which predicted" tile
+   appears whenever estimates are shown. Four tiles fill the row; five still fit
+   at the content width instead of orphaning one on a second row. */
 @media (min-width: 640px) {
-  .summary-row { grid-template-columns: repeat(4, 1fr); }
+  .summary-row { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 }
 
 .summary-stat {
@@ -1303,6 +1388,15 @@ p { color: var(--color-text-secondary); }
   letter-spacing: 0.07em;
   color: var(--color-text-muted);
   margin-top: var(--space-2);
+}
+
+/* Qualifier under a tile whose number could be misread as a finding. */
+.summary-stat-hint {
+  font-size: var(--text-xs);
+  font-style: italic;
+  color: var(--color-text-muted);
+  opacity: 0.8;
+  margin-top: 2px;
 }
 
 /* ==========================================================================

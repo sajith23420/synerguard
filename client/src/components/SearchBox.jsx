@@ -11,6 +11,8 @@ export default function SearchBox({ onSelect, selectedDrugs = [] }) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isFuzzy, setIsFuzzy] = useState(false);
+  // canonical name -> the synonym the user's query actually matched
+  const [aliases, setAliases] = useState({});
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,19 +30,22 @@ export default function SearchBox({ onSelect, selectedDrugs = [] }) {
     if (searchQuery.length < 2) {
       setSuggestions([]);
       setIsFuzzy(false);
+      setAliases({});
       return;
     }
 
     setIsLoading(true);
     try {
-      const { results, fuzzy } = await searchDrugs(searchQuery);
+      const { results, fuzzy, aliases: matched } = await searchDrugs(searchQuery);
       setSuggestions(results);
       setIsFuzzy(fuzzy);
+      setAliases(matched || {});
       setHighlightedIndex(-1);
     } catch (error) {
       console.error('Search failed:', error);
       setSuggestions([]);
       setIsFuzzy(false);
+      setAliases({});
     } finally {
       setIsLoading(false);
     }
@@ -186,7 +191,9 @@ export default function SearchBox({ onSelect, selectedDrugs = [] }) {
           onFocus={() => query.length >= 2 && setIsOpen(true)}
           autoComplete="off"
           aria-autocomplete="list"
-          aria-controls="drug-suggestions"
+          // Only point at the listbox when it is actually in the DOM — in the
+          // fuzzy-miss and no-match states there is no list to control.
+          aria-controls={filteredSuggestions.length > 0 ? 'drug-suggestions' : undefined}
           aria-expanded={isOpen && filteredSuggestions.length > 0}
         />
         {isLoading && <div className="spinner input-spinner" aria-hidden="true" />}
@@ -212,7 +219,17 @@ export default function SearchBox({ onSelect, selectedDrugs = [] }) {
                     onMouseLeave={() => setHighlightedIndex(-1)}
                     onClick={() => handleSelect(drug)}
                   >
-                    <span className="autocomplete-item-name">{drug}</span>
+                    <span className="autocomplete-item-text">
+                      <span className="autocomplete-item-name">{drug}</span>
+                      {/* The query matched a synonym with far less interaction
+                          data, so the search was redirected here. Say so — a
+                          silent swap changes which medicine gets screened. */}
+                      {aliases[drug] && (
+                        <span className="autocomplete-item-alias">
+                          matched “{aliases[drug]}” — screened as {drug}
+                        </span>
+                      )}
+                    </span>
                     <span className="autocomplete-item-hint" aria-hidden="true">Enter ↵</span>
                   </li>
                 ))}

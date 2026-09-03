@@ -1,6 +1,7 @@
 export { default as SearchBox } from './SearchBox';
 export { default as DrugChips } from './DrugChips';
 export { default as UnknownDrugsNotice } from './UnknownDrugsNotice';
+export { default as SubstitutionNotice } from './SubstitutionNotice';
 export { default as UnpredictableNotice } from './UnpredictableNotice';
 export { default as PredictionToggle } from './PredictionToggle';
 export { default as ResultsSummary } from './ResultsSummary';

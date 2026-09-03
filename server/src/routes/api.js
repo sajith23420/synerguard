@@ -22,11 +22,14 @@ router.get('/drugs/search', (req, res) => {
  */
 router.get('/drugs/resolve', (req, res) => {
   const name = req.query.name || '';
-  const canonical = store.resolveDrug(name);
+  const { canonical, alias } = store.resolveDrugWithAlias(name);
   res.json({
     input: String(name).trim(),
     known: Boolean(canonical),
     canonical,
+    // Present only when a synonym redirect was applied, so the caller can say
+    // which medicine was actually used.
+    matchedVia: alias ? alias.from : null,
     suggestions: canonical ? [] : store.fuzzyMatches(name, 5),
   });
 });

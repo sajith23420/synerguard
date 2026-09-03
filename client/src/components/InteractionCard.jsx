@@ -1,6 +1,20 @@
 import { useState, useEffect, useId } from 'react';
 
 /**
+ * Confidence as a whole percentage, capped at 99.
+ *
+ * Math.round alone sends everything from 0.995 upward to a flat "100%" — 11,486
+ * of the 56,342 exported predictions, one in five. A badge reading "100%" on an
+ * estimate that was never clinically verified overstates certainty in exactly
+ * the direction this tool must not, given that held-out recall for Major is 0.67.
+ *
+ * The stored value in predictions.json is untouched; only the display is capped.
+ */
+function formatConfidence(confidence) {
+  return Math.min(99, Math.round(confidence * 100));
+}
+
+/**
  * InteractionCard component - displays a single drug interaction
  * @param {Object} props
  * @param {Object} props.interaction - Interaction object from API
@@ -79,7 +93,7 @@ export default function InteractionCard({
           </span>
           {isPredicted && (
             <span className="badge badge-predicted">
-              Predicted · {Math.round(confidence * 100)}%
+              Predicted · {formatConfidence(confidence)}%
             </span>
           )}
           {hasRich && <span className="badge badge-curated">Curated</span>}
@@ -95,7 +109,7 @@ export default function InteractionCard({
         <div className="interaction-body" id={bodyId}>
           {isPredicted && (
             <p className="interaction-predicted-note">
-              This severity is an <strong>ML estimate</strong> ({Math.round(confidence * 100)}%
+              This severity is an <strong>ML estimate</strong> ({formatConfidence(confidence)}%
               confidence), not a graded interaction. The source data records this pair as
               Unknown. Estimates under-call Major roughly one time in three — confirm with a
               qualified prescriber.
@@ -104,35 +118,35 @@ export default function InteractionCard({
 
           <div className="interaction-fields">
             {description && (
-              <div className="interaction-field interaction-field-wide">
+              <div className="interaction-field-wide">
                 <span className="interaction-field-label">Description</span>
                 <p className="interaction-field-value">{description}</p>
               </div>
             )}
 
             {showClinical && mechanism && (
-              <div className="interaction-field">
+              <div>
                 <span className="interaction-field-label">Mechanism</span>
                 <p className="interaction-field-value">{mechanism}</p>
               </div>
             )}
 
             {showClinical && clinicalEffect && (
-              <div className="interaction-field">
+              <div>
                 <span className="interaction-field-label">Clinical effect</span>
                 <p className="interaction-field-value">{clinicalEffect}</p>
               </div>
             )}
 
             {showClinical && clinicalManagement && (
-              <div className="interaction-field interaction-field-wide">
+              <div className="interaction-field-wide">
                 <span className="interaction-field-label">Management</span>
                 <p className="interaction-field-value">{clinicalManagement}</p>
               </div>
             )}
 
             {hasRich && saferAlternative && (
-              <div className="interaction-field interaction-field-wide interaction-field-alt">
+              <div className="interaction-field-wide interaction-field-alt">
                 <span className="interaction-field-label">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <polyline points="20 6 9 17 4 12" />

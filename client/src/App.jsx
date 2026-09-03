@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getStats, checkInteractions } from './api';
+import { getStats, checkInteractions, resolveDrugName } from './api';
 import {
   SearchBox,
   DrugChips,
   UnknownDrugsNotice,
+  SubstitutionNotice,
   UnpredictableNotice,
   PredictionToggle,
   ResultsSummary,
@@ -44,6 +45,10 @@ function App() {
     predicted: 0,
   });
 
+  // Names the resolver could not find, checked as each drug is added rather than
+  // only once an analysis has run.
+  const [unverifiedDrugs, setUnverifiedDrugs] = useState([]);
+
   // Results view state
   const [activeSeverities, setActiveSeverities] = useState(ALL_SEVERITIES);
   const [sort, setSort] = useState('severity');
@@ -57,6 +62,22 @@ function App() {
       .catch((err) => console.error('Failed to load stats:', err));
   }, []);
 
+  /**
+   * Ask the server whether a name is in the dataset, and remember it if not.
+   *
+   * Fire-and-forget: a failed lookup leaves the chip unmarked, and the check on
+   * Analyse still reports the name as unscreened. This only moves the warning
+   * earlier, it is not the thing the warning depends on.
+   */
+  const flagIfUnknown = useCallback((drug) => {
+    resolveDrugName(drug)
+      .then(({ known }) => {
+        if (known) return;
+        setUnverifiedDrugs((prev) => (prev.includes(drug) ? prev : [...prev, drug]));
+      })
+      .catch((err) => console.error('Resolve failed:', err));
+  }, []);
+
   // Handle drug selection
   const handleAddDrug = useCallback((drug) => {
     if (selectedDrugs.includes(drug)) return;
@@ -66,11 +87,13 @@ function App() {
     // never screened — the exact failure this tool exists to prevent.
     setResults(null);
     setError(null);
-  }, [selectedDrugs]);
+    flagIfUnknown(drug);
+  }, [selectedDrugs, flagIfUnknown]);
 
   // Handle drug removal
   const handleRemoveDrug = useCallback((drug) => {
     setSelectedDrugs((prev) => prev.filter((d) => d !== drug));
+    setUnverifiedDrugs((prev) => prev.filter((d) => d !== drug));
     // Clear results when drugs change
     setResults(null);
     setError(null);
@@ -102,6 +125,7 @@ function App() {
   // Clear results
   const handleClear = useCallback(() => {
     setSelectedDrugs([]);
+    setUnverifiedDrugs([]);
     setResults(null);
     setError(null);
   }, []);
@@ -113,6 +137,7 @@ function App() {
       const next = prev.filter((d) => d !== wrongName);
       return next.includes(correctName) ? next : [...next, correctName];
     });
+    setUnverifiedDrugs((prev) => prev.filter((d) => d !== wrongName));
     setResults(null);
     setError(null);
   }, []);
@@ -133,7 +158,14 @@ function App() {
   const interactions = useMemo(() => results?.interactions ?? [], [results]);
 
   const unknownDrugs = useMemo(() => results?.unknown ?? [], [results]);
-  const unknownNames = useMemo(() => unknownDrugs.map((u) => u.input), [unknownDrugs]);
+
+  // Chips are marked unscreened from two sources: the per-name check that runs
+  // on add, and the last analysis. The first keeps the warning visible while the
+  // regimen is being edited, when results have deliberately been cleared.
+  const unknownNames = useMemo(
+    () => [...new Set([...unverifiedDrugs, ...unknownDrugs.map((u) => u.input)])],
+    [unverifiedDrugs, unknownDrugs]
+  );
 
   // How many interactions exist per severity, before filtering
   const severityCounts = useMemo(() => {
@@ -300,6 +332,8 @@ function App() {
                 onReplace={handleReplaceDrug}
               />
 
+              <SubstitutionNotice substitutions={results.substitutions ?? []} />
+
               <PredictionToggle
                 showPredicted={showPredicted}
                 onChange={setShowPredicted}
@@ -404,10 +438,14 @@ function App() {
                 analysis screens every pair against {stats.interactions.toLocaleString()} recorded
                 interaction pairs.
               </p>
+              {/* Every example here returns a graded interaction — verified
+                  against the API. Suggesting a pair the dataset has no record of
+                  teaches the first-time user that "nothing found" is the normal
+                  result, which is the wrong lesson from a screening tool. */}
               <div className="example-list">
                 <span className="example-pill">Warfarin + Ibuprofen</span>
-                <span className="example-pill">Aspirin + Clopidogrel</span>
-                <span className="example-pill">Metformin + Alcohol</span>
+                <span className="example-pill">Simvastatin + Clarithromycin</span>
+                <span className="example-pill">Methotrexate + Trimethoprim</span>
               </div>
             </section>
           )}

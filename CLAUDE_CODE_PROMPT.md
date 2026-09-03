@@ -1,3 +1,15 @@
+> **HISTORICAL ARTEFACT — DO NOT USE AS DOCUMENTATION.**
+>
+> This is the original scaffolding prompt used to generate the first version of
+> the React client. It is kept for provenance, because the dissertation describes
+> how the client was built.
+>
+> **It describes an API that no longer exists.** Since it was written the server
+> has gained fuzzy name matching, unrecognised-drug reporting, synonym redirects
+> and the whole predicted tier; `/api/stats` and `/api/drugs/search` both return
+> different shapes now. For the current API see **`README.md`**, and for the
+> severity model see **`ml/README.md`**.
+
 # Claude Code Prompt — SynerGuard React Frontend
 
 Copy everything inside the code block below and paste it into the Claude Code
