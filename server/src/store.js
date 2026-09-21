@@ -144,6 +144,12 @@ async function load() {
   // A stale alias is worse than no alias: it would silently resolve to nothing
   // and the drug would drop out of the screen. Check the map against the data
   // as soon as the names are loaded, and say so loudly if it has drifted.
+  //
+  // Only a missing TARGET is a fault. A missing source is the ordinary case for
+  // the BAN/INN spellings: 'paracetamol' is not a name this data uses, which is
+  // the whole reason the alias exists. Such a key still redirects correctly —
+  // resolution reads DRUG_ALIASES directly — it just has no records of its own
+  // to reverse-map below, so there is nothing to report.
   for (const [key, target] of DRUG_ALIASES) {
     const canonical = state.byLower.get(target.toLowerCase());
     const source = state.byNormalised.get(key);
@@ -153,7 +159,6 @@ async function load() {
       continue;
     }
     if (!source) {
-      console.warn(`Alias key '${key}' matches no drug name — it can never fire.`);
       continue;
     }
 
