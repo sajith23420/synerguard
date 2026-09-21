@@ -58,6 +58,30 @@ const MIN_LABELLED_HISTORY = 5;
 const DRUG_ALIASES = new Map([
   ['aspirin', 'Acetylsalicylic acid'],  // 2 pairs -> 864
   ['alcohol', 'Ethanol'],               // 1 pair  -> 674
+
+  // British Approved / INN spellings. Sri Lankan prescribing follows the BNF,
+  // but the merged datasets are US-named throughout, so these were dead ends:
+  // the name simply did not resolve and the drug dropped out of the screen.
+  // Each source name below was checked to be absent from drugs.json in its own
+  // right, so nothing is being shadowed — these add reach rather than redirect
+  // it. Rule 1 still applies, which is why 'hyoscine' is NOT here: hyoscine
+  // butylbromide is not scopolamine, and guessing between them is exactly the
+  // ambiguity the rule forbids.
+  ['paracetamol', 'Acetaminophen'],
+  ['glibenclamide', 'Glyburide'],
+  ['thyroxine', 'Levothyroxine'],
+  ['sodiumvalproate', 'Valproic acid'],
+  ['frusemide', 'Furosemide'],
+  ['pethidine', 'Meperidine'],
+  ['lignocaine', 'Lidocaine'],
+  ['chlorphenamine', 'Chlorpheniramine'],
+  ['adrenaline', 'Epinephrine'],
+  ['noradrenaline', 'Norepinephrine'],
+  ['ciclosporin', 'Cyclosporine'],
+  ['oestradiol', 'Estradiol'],
+  ['amoxycillin', 'Amoxicillin'],
+  ['dexamfetamine', 'Dextroamphetamine'],
+  ['colestyramine', 'Cholestyramine'],
 ]);
 
 // Public state (populated by load())
