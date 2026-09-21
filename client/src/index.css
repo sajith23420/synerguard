@@ -386,6 +386,7 @@ body {
 .col-main,
 .rail {
   min-width: 0;
+  container-type: inline-size;
 }
 
 /* Two columns from 1024px: a sticky left rail and a main column that scrolls
@@ -639,7 +640,7 @@ p { color: var(--color-text-secondary); }
   letter-spacing: -0.025em;
 }
 
-@media (max-width: 639px) {
+@container (max-width: 639px) {
   .page-title { font-size: var(--text-2xl); }
 }
 
@@ -768,7 +769,7 @@ p { color: var(--color-text-secondary); }
   position: relative;
 }
 
-@media (min-width: 640px) {
+@container (min-width: 640px) {
   .panel { padding: var(--space-8); }
 }
 
@@ -1486,7 +1487,7 @@ p { color: var(--color-text-secondary); }
 /* auto-fit rather than a fixed 4, because a fifth "of which predicted" tile
    appears whenever estimates are shown. Four tiles fill the row; five still fit
    at the content width instead of orphaning one on a second row. */
-@media (min-width: 640px) {
+@container (min-width: 640px) {
   .summary-row { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 }
 
@@ -1778,7 +1779,7 @@ p { color: var(--color-text-secondary); }
   gap: var(--space-4);
 }
 
-@media (min-width: 720px) {
+@container (min-width: 720px) {
   .interaction-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .interaction-field-wide { grid-column: 1 / -1; }
 }
@@ -1837,7 +1838,7 @@ p { color: var(--color-text-secondary); }
   gap: var(--space-4);
 }
 
-@media (min-width: 640px) {
+@container (min-width: 640px) {
   .food-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -2075,10 +2076,13 @@ p { color: var(--color-text-secondary); }
 
 @media (max-width: 639px) {
   .main { padding: var(--space-6) var(--space-4) var(--space-12); }
-  .panel { padding: var(--space-5); }
-  .panel-actions .btn-primary { min-width: 100%; }
-  .interaction-header { padding: var(--space-4); }
   .header-stats { gap: var(--space-4); }
+}
+
+@container (max-width: 639px) {
+  .panel { padding: var(--space-5); }
+  .panel-actions .btn { min-width: 100%; }
+  .interaction-header { padding: var(--space-4); }
 }
 
 /* ==========================================================================
@@ -2226,9 +2230,10 @@ p { color: var(--color-text-secondary); }
     color: #000 !important;
   }
 
-  /* On paper the colour is gone, so the dashed edge is the only thing left
-     separating an estimate from a graded severity. It has to survive. */
+  /* Mirrors the existing .badge-estimate print rule. Both exist so the 
+     estimate/graded distinction survives greyscale. */
   .badge-estimate { border-style: dashed !important; }
+  .interaction-card-predicted { border-left-style: dashed !important; }
 
   .badge::before { display: none; }
 

@@ -5,8 +5,27 @@ const store = require('./store');
 const apiRoutes = require('./routes/api');
 
 const app = express();
-app.use(cors());
+
+// CORS allow-list from ALLOWED_ORIGINS (comma-separated). Unset or empty keeps
+// the permissive development behaviour. Requests without an Origin header
+// (health checks, curl, server-to-server) are always allowed.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+app.use(cors(allowedOrigins.length === 0 ? undefined : {
+  origin(origin, callback) {
+    callback(null, !origin || allowedOrigins.includes(origin));
+  },
+}));
 app.use(express.json());
+
+// Liveness/readiness probe for Render and the keep-alive pinger. Sits outside
+// /api so the 503-until-ready guard below does not apply to it.
+app.get('/healthz', (req, res) => {
+  res.json({ status: 'ok', ready: store.state.ready });
+});
 
 // Block requests until the in-memory data has finished loading
 app.use('/api', (req, res, next) => {
