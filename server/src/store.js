@@ -362,9 +362,17 @@ function resolveDrug(input) {
  * Autocomplete. Prefix matches first, then substring. If neither turns anything
  * up the query is probably a typo, so fall back to fuzzy matches and say so —
  * that way the UI can offer "did you mean …?" instead of a dead end.
+ *
+ * The scan alone cannot reach a synonym. It walks drugNames and only then hands
+ * what it found to redirect(), so an alias fires only when its key happens to
+ * be a real data name — which is why 'aspirin' worked and 'paracetamol' did
+ * not: the latter is not in drugs.json at all, so the scan found nothing, fuzzy
+ * found nothing, and the map was never consulted. The alias map is therefore
+ * matched against the query itself, before the scan's results are considered.
  */
 function searchDrugs(q, limit = 10) {
-  const ql = q.trim().toLowerCase();
+  const typed = q.trim();
+  const ql = typed.toLowerCase();
   if (!ql) return { results: [], fuzzy: false };
 
   const starts = [];
@@ -376,8 +384,52 @@ function searchDrugs(q, limit = 10) {
     if (starts.length >= limit) break;
   }
 
-  const results = [...starts, ...contains].slice(0, limit);
-  if (results.length > 0) return { ...redirect(results), fuzzy: false };
+  const scan = redirect([...starts, ...contains].slice(0, limit));
+
+  // An exact key match is what the user meant; a key the query is only a prefix
+  // of is someone mid-word, so it ranks below the exact hit but still above the
+  // scan — a synonym the scan cannot see would otherwise be pushed off the end
+  // of the list by commoner names.
+  const nq = normalise(ql);
+  const aliasTargets = [];
+  const exact = DRUG_ALIASES.get(nq);
+  if (exact) aliasTargets.push(exact);
+  for (const [key, target] of DRUG_ALIASES) {
+    if (key !== nq && key.startsWith(nq)) aliasTargets.push(target);
+  }
+
+  const results = [];
+  const aliases = {};
+  const seen = new Set();
+
+  for (const target of aliasTargets) {
+    const canonical = state.byLower.get(target.toLowerCase());
+    if (!canonical || seen.has(canonical)) continue;
+    seen.add(canonical);
+    results.push(canonical);
+    // Prefer the spelling the scan matched ("Aspirin") when the source name is
+    // itself a data name; otherwise quote what the user typed, since there is
+    // no better spelling to show them.
+    aliases[canonical] = scan.aliases[canonical] || typed;
+  }
+
+  for (const name of scan.results) {
+    if (seen.has(name)) continue;
+    seen.add(name);
+    results.push(name);
+    // The scan matched a real data spelling ("Aspirin"), which is a truer label
+    // for the substitution than the user's raw keystrokes.
+    if (scan.aliases[name]) aliases[name] = scan.aliases[name];
+  }
+
+  if (results.length > 0) {
+    const capped = results.slice(0, limit);
+    const shown = {};
+    for (const name of capped) {
+      if (aliases[name]) shown[name] = aliases[name];
+    }
+    return { results: capped, aliases: shown, fuzzy: false };
+  }
 
   return { ...redirect(fuzzyMatches(ql, 5).map((m) => m.name)), fuzzy: true };
 }
