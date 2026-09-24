@@ -16,7 +16,10 @@
  *
  *   variant="switch"   the control. Lives in the rail. Hidden in print.
  *   variant="warning"  the warning paragraph. Lives in the main column,
- *                      immediately above the interaction list. Printed.
+ *                      immediately above the interaction list. Printed. When
+ *                      the user has NOT opted in, this slot instead carries a
+ *                      quiet notice that estimates are available at all — the
+ *                      switch alone is too easy to miss.
  *
  * BOTH MUST BE RENDERED. Rendering the switch alone gives the user a way to
  * turn on unverified estimates with nothing telling them what they have turned
@@ -40,7 +43,22 @@ export default function PredictionToggle({
   if (available === 0) return null;
 
   if (variant === 'warning') {
-    if (!showPredicted) return null;
+    // Third state of this variant: estimates exist but the user has not opted
+    // in. The switch sits in the rail below the fold, so without this the
+    // reader never learns there is anything to turn on. It is deliberately
+    // quiet, and deliberately says nothing about WHAT was estimated — no
+    // severity, no confidence, no pair. Revealing any of that would deliver
+    // the unverified estimate the default-off state exists to withhold.
+    if (!showPredicted) {
+      return (
+        <p className="prediction-availability" role="note">
+          {available} pair{available === 1 ? '' : 's'} in this regimen{' '}
+          {available === 1 ? 'has' : 'have'} a machine-learning estimate available.
+          Turn on &ldquo;Show predicted severities&rdquo; to view{' '}
+          {available === 1 ? 'it' : 'them'}.
+        </p>
+      );
+    }
 
     return (
       <p className="prediction-toggle-warning prediction-warning-standalone" role="note">

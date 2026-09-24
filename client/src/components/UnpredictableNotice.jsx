@@ -75,14 +75,15 @@ export default function UnpredictableNotice({ items = [] }) {
         {thin.length > 0 && (
           <>
             {thin.length} skipped for lack of data — the model learns from a drug&apos;s other
-            graded interactions, and cannot estimate for one that has too few.
+            graded interactions, and cannot estimate for one that has too few. This is not a
+            statement that the combination is safe.
           </>
         )}
         {thin.length > 0 && unsure.length > 0 && ' '}
         {unsure.length > 0 && (
           <>
             {unsure.length} skipped because the estimate fell below the confidence
-            threshold.
+            threshold. This is not a statement that the combination is safe.
           </>
         )}{' '}
         These remain <strong>Unknown</strong>, which means not assessed — not assessed as safe.

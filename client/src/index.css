@@ -1377,6 +1377,21 @@ p { color: var(--color-text-secondary); }
   margin-bottom: var(--space-5);
 }
 
+/* Estimates exist, but the user has not opted in. This is information, not a
+   caution: it borrows nothing from the violet estimate palette or the severity
+   colours, and stays quieter than the warning it makes way for. */
+.prediction-availability {
+  margin-top: 0;
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  background: var(--color-card-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
 .summary-stat-predicted {
   border-color: var(--color-predicted-border);
 }
@@ -2236,6 +2251,12 @@ p { color: var(--color-text-secondary); }
   .interaction-card-predicted { border-left-style: dashed !important; }
 
   .badge::before { display: none; }
+
+  .prediction-availability {
+    background: #fff !important;
+    border: 1pt solid #bbb !important;
+    color: #333 !important;
+  }
 
   .interaction-predicted-note,
   .prediction-toggle-warning {

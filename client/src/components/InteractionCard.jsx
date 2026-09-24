@@ -92,7 +92,10 @@ export default function InteractionCard({
             {shownSeverity}
           </span>
           {isPredicted && (
-            <span className="badge badge-predicted">
+            <span
+              className="badge badge-predicted"
+              title="Machine-learning estimate — not a verified grading"
+            >
               Predicted · {formatConfidence(confidence)}%
             </span>
           )}
