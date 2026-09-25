@@ -82,6 +82,46 @@ const DRUG_ALIASES = new Map([
   ['amoxycillin', 'Amoxicillin'],
   ['dexamfetamine', 'Dextroamphetamine'],
   ['colestyramine', 'Cholestyramine'],
+
+  // Second pass over the BNF vocabulary: rescue names, anaesthetics, the older
+  // barbiturates and the remaining BAN/INN splits. Same rules as above — each
+  // source name was checked against drugs.json and, apart from 'rifampin',
+  // none of them is a data name in its own right, so nothing is shadowed.
+  ['folinicacid', 'Leucovorin'],
+  ['calciumfolinate', 'Leucovorin'],
+  ['aciclovir', 'Acyclovir'],
+  ['amfetamine', 'Amphetamine'],
+  ['tribavirin', 'Ribavirin'],
+  ['thiopentone', 'Thiopental'],
+  ['suxamethonium', 'Succinylcholine'],
+  ['methohexitone', 'Methohexital'],
+  ['amethocaine', 'Tetracaine'],
+  ['quinalbarbitone', 'Secobarbital'],
+  ['amylobarbitone', 'Amobarbital'],
+  ['butobarbitone', 'Butabarbital'],
+  ['glyceryltrinitrate', 'Nitroglycerin'],
+  ['sodiumnitroprusside', 'Nitroprusside'],
+  ['oxpentifylline', 'Pentoxifylline'],
+  ['sulfafurazole', 'Sulfisoxazole'],
+  ['demethylchlortetracycline', 'Demeclocycline'],
+
+  // 'Rifampin' is the aspirin case again: both spellings are in drugs.json,
+  // but the US name carries 1 pair against Rifampicin's 835.
+  ['rifampin', 'Rifampicin'],
+
+  ['benzhexol', 'Trihexyphenidyl'],
+  ['dothiepin', 'Dosulepin'],
+  ['dicycloverine', 'Dicyclomine'],
+  ['thiamazole', 'Methimazole'],
+  ['eformoterol', 'Formoterol'],
+  ['beclometasone', 'Beclomethasone dipropionate'],
+  ['sodiumcromoglicate', 'Cromoglicic acid'],
+  ['sodiumcromoglycate', 'Cromoglicic acid'],
+  ['cromolyn', 'Cromoglicic acid'],
+  ['busulphan', 'Busulfan'],
+  ['actinomycind', 'Dactinomycin'],
+  ['methylthioniniumchloride', 'Methylene blue'],
+  ['podophyllotoxin', 'Podofilox'],
 ]);
 
 // Public state (populated by load())
@@ -368,7 +408,8 @@ function resolveDrug(input) {
  * be a real data name — which is why 'aspirin' worked and 'paracetamol' did
  * not: the latter is not in drugs.json at all, so the scan found nothing, fuzzy
  * found nothing, and the map was never consulted. The alias map is therefore
- * matched against the query itself, before the scan's results are considered.
+ * matched against the query itself, and its hits are interleaved with the
+ * scan's by how strong the evidence for each is — see the ordering below.
  */
 function searchDrugs(q, limit = 10) {
   const typed = q.trim();
@@ -384,43 +425,66 @@ function searchDrugs(q, limit = 10) {
     if (starts.length >= limit) break;
   }
 
-  const scan = redirect([...starts, ...contains].slice(0, limit));
+  const scanStarts = redirect(starts.slice(0, limit));
+  const scanContains = redirect(contains.slice(0, limit));
 
-  // An exact key match is what the user meant; a key the query is only a prefix
-  // of is someone mid-word, so it ranks below the exact hit but still above the
-  // scan — a synonym the scan cannot see would otherwise be pushed off the end
-  // of the list by commoner names.
+  // An exact key match is what the user meant, so it outranks everything. A key
+  // the query is merely a prefix of is someone mid-word: that belongs below the
+  // literal prefix matches — a name the user is halfway through typing is a
+  // better guess than a synonym they have not finished spelling — but above the
+  // substring matches, which a synonym would otherwise be pushed off the end of
+  // the list by.
+  //
+  // Below three characters the prefix pass is not evidence of anything. Two
+  // letters match a large slice of the map at random ('al' hits 'alcohol'),
+  // which used to drop Ethanol on top of a list of Al- drugs the user was
+  // plainly still typing. Short queries therefore see the literal scan only.
   const nq = normalise(ql);
-  const aliasTargets = [];
+  const MIN_ALIAS_PREFIX = 3;
+  const exactTargets = [];
+  const prefixTargets = [];
   const exact = DRUG_ALIASES.get(nq);
-  if (exact) aliasTargets.push(exact);
-  for (const [key, target] of DRUG_ALIASES) {
-    if (key !== nq && key.startsWith(nq)) aliasTargets.push(target);
+  if (exact) exactTargets.push(exact);
+  if (nq.length >= MIN_ALIAS_PREFIX) {
+    for (const [key, target] of DRUG_ALIASES) {
+      if (key !== nq && key.startsWith(nq)) prefixTargets.push(target);
+    }
   }
 
   const results = [];
   const aliases = {};
   const seen = new Set();
 
-  for (const target of aliasTargets) {
-    const canonical = state.byLower.get(target.toLowerCase());
-    if (!canonical || seen.has(canonical)) continue;
-    seen.add(canonical);
-    results.push(canonical);
-    // Prefer the spelling the scan matched ("Aspirin") when the source name is
-    // itself a data name; otherwise quote what the user typed, since there is
-    // no better spelling to show them.
-    aliases[canonical] = scan.aliases[canonical] || typed;
-  }
+  const pushTargets = (targets) => {
+    for (const target of targets) {
+      const canonical = state.byLower.get(target.toLowerCase());
+      if (!canonical || seen.has(canonical)) continue;
+      seen.add(canonical);
+      results.push(canonical);
+      // Prefer the spelling the scan matched ("Aspirin") when the source name is
+      // itself a data name; otherwise quote what the user typed, since there is
+      // no better spelling to show them.
+      aliases[canonical] = scanStarts.aliases[canonical]
+        || scanContains.aliases[canonical]
+        || typed;
+    }
+  };
 
-  for (const name of scan.results) {
-    if (seen.has(name)) continue;
-    seen.add(name);
-    results.push(name);
-    // The scan matched a real data spelling ("Aspirin"), which is a truer label
-    // for the substitution than the user's raw keystrokes.
-    if (scan.aliases[name]) aliases[name] = scan.aliases[name];
-  }
+  const pushScan = (scan) => {
+    for (const name of scan.results) {
+      if (seen.has(name)) continue;
+      seen.add(name);
+      results.push(name);
+      // The scan matched a real data spelling ("Aspirin"), which is a truer label
+      // for the substitution than the user's raw keystrokes.
+      if (scan.aliases[name]) aliases[name] = scan.aliases[name];
+    }
+  };
+
+  pushTargets(exactTargets);
+  pushScan(scanStarts);
+  pushTargets(prefixTargets);
+  pushScan(scanContains);
 
   if (results.length > 0) {
     const capped = results.slice(0, limit);
