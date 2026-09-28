@@ -15,6 +15,7 @@ export default function ResultsSummary({
   const major = counts.Major || 0;
   const moderate = counts.Moderate || 0;
   const minor = counts.Minor || 0;
+  const ungraded = counts.Unknown || 0;
   const noFlag = totalPairs - flagged;
 
   return (
@@ -30,6 +31,17 @@ export default function ResultsSummary({
       <div className="summary-stat summary-stat-minor">
         <div className="summary-stat-value" aria-label={`Minor interactions: ${minor}`}>{minor}</div>
         <div className="summary-stat-label">Minor</div>
+      </div>
+      {/* Recorded interactions with no severity grade. Without this tile the
+          severity tiles could all read 0 while a pair was in fact flagged,
+          which reads as a clean regimen — the silent failure to avoid. */}
+      <div
+        className="summary-stat summary-stat-ungraded"
+        title="An interaction is recorded for these pairs, but no severity grade exists. This is not a finding of safety."
+      >
+        <div className="summary-stat-value" aria-label={`Ungraded interactions: ${ungraded}`}>{ungraded}</div>
+        <div className="summary-stat-label">Ungraded</div>
+        <div className="summary-stat-hint">severity not recorded</div>
       </div>
       {/* Not "No Flag": these pairs have no entry in the dataset at all, so
           nothing was assessed. Labelling that as a clean result would imply the

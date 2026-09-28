@@ -1499,11 +1499,12 @@ p { color: var(--color-text-secondary); }
   margin-bottom: var(--space-5);
 }
 
-/* auto-fit rather than a fixed 4, because a fifth "of which predicted" tile
-   appears whenever estimates are shown. Four tiles fill the row; five still fit
-   at the content width instead of orphaning one on a second row. */
+/* auto-fit rather than a fixed count: five tiles always show, and a sixth
+   "of which predicted" tile appears whenever estimates are shown. The narrower
+   minimum keeps all six on one row at the content width instead of orphaning
+   one on a second row. */
 @container (min-width: 640px) {
-  .summary-row { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .summary-row { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
 }
 
 .summary-stat {
@@ -1529,6 +1530,9 @@ p { color: var(--color-text-secondary); }
 .summary-stat-major::before { background: var(--color-major); }
 .summary-stat-moderate::before { background: var(--color-moderate); }
 .summary-stat-minor::before { background: var(--color-minor); }
+/* Ungraded and "No record" both use the neutral grey: neither is a severity,
+   and neither is a clean result. */
+.summary-stat-ungraded::before { background: var(--color-unknown); }
 .summary-stat-none::before { background: var(--color-unknown); }
 
 .summary-stat-value {
@@ -1543,6 +1547,7 @@ p { color: var(--color-text-secondary); }
 .summary-stat-major .summary-stat-value { color: var(--color-major); }
 .summary-stat-moderate .summary-stat-value { color: var(--color-moderate); }
 .summary-stat-minor .summary-stat-value { color: var(--color-minor); }
+.summary-stat-ungraded .summary-stat-value { color: var(--color-unknown); }
 .summary-stat-none .summary-stat-value { color: var(--color-unknown); }
 
 .summary-stat-label {
@@ -2215,8 +2220,10 @@ p { color: var(--color-text-secondary); }
 
   .results-section { margin-top: 0; }
 
+  /* auto-fit for the same reason as on screen: five tiles always, six with
+     estimates. A fixed count would orphan the last one. */
   .summary-row {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(26mm, 1fr));
     gap: 3mm;
   }
 
