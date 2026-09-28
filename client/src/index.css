@@ -1993,6 +1993,174 @@ p { color: var(--color-text-secondary); }
 .mode-toggle-switch[aria-checked='true'] .mode-toggle-thumb { transform: translateX(20px); }
 
 /* ==========================================================================
+   Splash — branded entrance, and the cover for the first getStats() call
+   ========================================================================== */
+
+.splash {
+  --splash-fade: 400ms;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: var(--color-shell);
+  /* The shell gradient is dark in both themes, so the mark sits on the same
+     navy here as it does in the printed brand. Text is set explicitly rather
+     than inherited, which would flip with the theme and lose contrast. */
+  color: #fff;
+  opacity: 1;
+  transition: opacity var(--splash-fade) ease;
+}
+
+.splash-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 30rem;
+}
+
+.splash-mark {
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--brand-teal-light) 0%, var(--brand-teal-dark) 100%);
+  box-shadow: 0 6px 30px rgb(20 143 143 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.2);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.splash-name {
+  margin-top: var(--space-5);
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.splash-tagline {
+  margin-top: var(--space-2);
+  font-size: var(--text-base);
+  letter-spacing: 0.02em;
+  color: var(--brand-teal-bright);
+}
+
+.splash-disclaimer {
+  margin-top: var(--space-5);
+  max-width: 26rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.62);
+}
+
+/* Held open whether or not it has content, so the mark does not jump when the
+   connecting line or the Skip button appears. */
+.splash-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  margin-top: var(--space-6);
+}
+
+.splash-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 26rem;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  text-align: left;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.splash-status .spinner {
+  border-color: rgb(255 255 255 / 0.25);
+  border-top-color: var(--brand-teal-bright);
+  width: 16px;
+  height: 16px;
+}
+
+.splash-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.splash-error-text {
+  max-width: 26rem;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.85);
+}
+
+.splash-skip {
+  color: rgb(255 255 255 / 0.7);
+}
+
+.splash-skip:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+
+/* Entrance. Only on the first load of a session, and only when motion is
+   welcome — .splash-animated is withheld otherwise, leaving the plain fade
+   below. */
+.splash-animated .splash-mark { animation: splashMark 620ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.splash-animated .splash-name { animation: splashRise 520ms ease-out 180ms both; }
+.splash-animated .splash-tagline { animation: splashRise 520ms ease-out 300ms both; }
+.splash-animated .splash-disclaimer { animation: splashRise 520ms ease-out 420ms both; }
+
+@keyframes splashMark {
+  from { opacity: 0; transform: scale(0.72); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes splashRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* No movement: the mark is simply there, and the exit is an instant switch
+   rather than a fade the user did not ask for. */
+@media (prefers-reduced-motion: reduce) {
+  .splash { --splash-fade: 0ms; }
+  .splash-animated .splash-mark,
+  .splash-animated .splash-name,
+  .splash-animated .splash-tagline,
+  .splash-animated .splash-disclaimer {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .splash-mark { width: 64px; height: 64px; font-size: var(--text-2xl); }
+  .splash-name { font-size: var(--text-3xl); }
+  .splash-tagline { font-size: var(--text-sm); }
+  .splash-disclaimer { font-size: var(--text-xs); }
+}
+
+/* Never on paper: the report starts at the print header. */
+@media print {
+  .splash { display: none !important; }
+}
+
+/* ==========================================================================
    States
    ========================================================================== */
 

@@ -14,9 +14,14 @@ import {
   Disclaimer,
   ModeToggle,
   ThemeToggle,
+  Splash,
 } from './components';
 
 const ALL_SEVERITIES = ['Major', 'Moderate', 'Minor', 'Unknown'];
+/** Gap between attempts while the server is waking. */
+const BOOT_RETRY_MS = 3000;
+/** How long to keep waking a sleeping server before calling it a failure. */
+const BOOT_BUDGET_MS = 90000;
 const SEVERITY_RANK = { Major: 0, Moderate: 1, Minor: 2, Unknown: 3 };
 
 /**
@@ -55,11 +60,48 @@ function App() {
   const [allExpanded, setAllExpanded] = useState(false);
   const [expandSignal, setExpandSignal] = useState(0);
 
-  // Fetch stats on mount
+  // Splash / boot state. The hosted API sleeps when idle and takes 30-50s to
+  // wake, during which the header would read zeros and every search would fail
+  // silently. Retry until it answers rather than leaving a dead app up.
+  const [statsReady, setStatsReady] = useState(false);
+  const [bootFailed, setBootFailed] = useState(false);
+  const [bootAttempt, setBootAttempt] = useState(0);
+  const [splashDone, setSplashDone] = useState(false);
+
+  // Fetch stats on mount, retrying while the server wakes
   useEffect(() => {
-    getStats()
-      .then(setStats)
-      .catch((err) => console.error('Failed to load stats:', err));
+    let cancelled = false;
+    let timer;
+    const startedAt = Date.now();
+
+    const attempt = () => {
+      getStats()
+        .then((data) => {
+          if (cancelled) return;
+          setStats(data);
+          setStatsReady(true);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          console.error('Failed to load stats:', err);
+          if (Date.now() - startedAt >= BOOT_BUDGET_MS) {
+            setBootFailed(true);
+            return;
+          }
+          timer = setTimeout(attempt, BOOT_RETRY_MS);
+        });
+    };
+
+    attempt();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [bootAttempt]);
+
+  const handleBootRetry = useCallback(() => {
+    setBootFailed(false);
+    setBootAttempt((n) => n + 1);
   }, []);
 
   /**
@@ -199,6 +241,15 @@ function App() {
 
   return (
     <div className="app">
+      {!splashDone && (
+        <Splash
+          ready={statsReady}
+          failed={bootFailed}
+          onRetry={handleBootRetry}
+          onDone={() => setSplashDone(true)}
+        />
+      )}
+
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>

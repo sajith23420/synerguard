@@ -11,3 +11,4 @@ export { default as FoodNotes } from './FoodNotes';
 export { default as Disclaimer } from './Disclaimer';
 export { default as ModeToggle } from './ModeToggle';
 export { default as ThemeToggle } from './ThemeToggle';
+export { default as Splash } from './Splash';
