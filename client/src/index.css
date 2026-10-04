@@ -2194,6 +2194,18 @@ p { color: var(--color-text-secondary); }
   color: var(--color-text-muted);
 }
 
+/* Beside the rail the welcome card starts level with the search panel, as
+   .results-section does, so the margin that separated the two when stacked is
+   unwanted. Its padding drops to the panel's own: at --space-12 the card ran
+   past the fold of a 1366x768 browser window. Scoped to .welcome-state — the
+   results view's empty states keep the base rule above. */
+@media (min-width: 1024px) {
+  .welcome-state {
+    margin-top: 0;
+    padding-block: var(--space-6);
+  }
+}
+
 .empty-state-icon {
   display: inline-flex;
   align-items: center;
